@@ -13,6 +13,11 @@ ARGP = argparse.ArgumentParser(
 )
 ARGP.add_argument('file_path', help="Path to .wc file.")
 
+BIT_FLAG = {
+    '\x00': False,
+    '\x01': True,
+}
+
 class _open(file):
     """
         Open wrapper with read_ahead.
@@ -52,7 +57,7 @@ def wc_parse(file_path):
         try:
             while True:
                 # Read 140 bytes, trim at the first zero byte
-                name = file_handle.read(140).split('\x00', 1)[0]
+                name = file_handle.read(132).split('\x00', 1)[0]
 
                 # Indicates EOF
                 if name == '':
@@ -62,23 +67,28 @@ def wc_parse(file_path):
 
                 try:
                     while True:
+                        line_header = file_handle.read(8)
+                        if line_header == '':
+                            raise StopIteration()
+
+                        if line_header[0] not in BIT_FLAG:
+                            # No longer on a command/argument,
+                            # Go back before line header
+                            file_handle.seek(file_handle.tell()-8)
+                            raise StopIteration()
+
+                        enabled = BIT_FLAG[line_header[0]]
+
                         # Read: command 260, arguments 536
                         callm = file_handle.read(260).split('\x00', 1)[0]
                         calla = file_handle.read(536).split('\x00', 1)[0]
-                        output[name].append((callm, calla))
-
-                        # Check the next character
-                        next_byte = file_handle.read_ahead(1)
-                        if next_byte != '\x01':
-                            # If we don't get a continuation character, break.
-                            raise StopIteration()
-
-                        # On continuation, discard the next eight bytes.
-                        _ = file_handle.read(8)
+                        output[name].append(tuple((enabled, callm, calla)))
 
                 except StopIteration:
                     # No more commands for this script.
                     pass
+
+                output[name] = tuple(output[name])
 
         except StopIteration:
             # No more scripts in this .wc file
