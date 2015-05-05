@@ -7,6 +7,14 @@
 """
 
 import argparse
+import binascii
+import re
+import string
+import textwrap
+
+from pprint import pformat
+
+from pprint import pprint
 
 ARGP = argparse.ArgumentParser(
     description='Extract values from Source SDK .wc files.'
@@ -38,6 +46,111 @@ class _open(file):
 
         return bytes_read
 
+    def seek_ahead(self, numbytes):
+        self.seek(self.tell() + numbytes)
+
+class WcStr(object):
+    """wc file string"""
+
+    FLAG_BYTES = 8
+    NON_ASCI = re.compile('[^{}]'.format(re.escape(string.printable)))
+
+    def __init__(self, value, flags):
+        super(WcStr, self).__init__()
+        self.raw = flags+value
+        self.value = self.NON_ASCI.split(value, 1)[0].strip()
+        self.flags = flags
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return '{}{}{}'.format(
+            ' '.join([
+                # Hex represent flags
+                '\033[30;1m{}\033[0m'.format(
+                    binascii.hexlify(c)
+                ) for c in self.flags
+            ]),
+            (' ' if self.flags else ''),
+            repr(self.value)
+        )
+
+    def bool_flag_at(self, idx):
+        if not self.flags[idx] in BIT_FLAG:
+            raise ValueError(
+                'Flag byte `{}` at {}, is not boolean.'.format(
+                    binascii.hexlify(self.flags[idx]),
+                    idx
+                )
+            )
+
+        return BIT_FLAG[self.flags[idx]]
+
+    @classmethod
+    def new_bytes(cls, raw_value, flag_bytes=None):
+        if flag_bytes is None:
+            flag_bytes = cls.FLAG_BYTES
+
+        return cls(
+            raw_value[flag_bytes:],
+            raw_value[:flag_bytes]
+        )
+
+class WcAction(object):
+    """docstring for WcAction"""
+
+    @property
+    def enabled(self):
+        return BIT_FLAG[self.call.flags[0]]
+
+    def __init__(self, call, args, check, unknown, continuation):
+        super(WcAction, self).__init__()
+        self.call = call
+        self.args = args
+        self.check = check
+        self.unknown = unknown
+        self.continuation = continuation
+
+    def __str__(self):
+
+        output = textwrap.dedent('''
+            call         {}
+            args         {}
+            check        {}
+            unknown      {}
+            continuation {}
+        ''').format(
+            repr(self.call),
+            # binascii.hexlify(call.raw)
+            repr(self.args),
+            # binascii.hexlify(args.raw)
+            repr(self.check),
+            # binascii.hexlify(check.raw)
+            repr(self.unknown),
+            # binascii.hexlify(unknown.raw)
+            repr(self.continuation)
+            # binascii.hexlify(continuation.raw)
+        )
+
+        return output
+
+    def __repr__(self):
+        output = '{}{} {}'.format(
+            ('' if self.enabled else '# '),
+            self.call,
+            self.args
+        )
+
+        return output
+
+class WcScript(list):
+    """docstring for WcScript"""
+    def __init__(self, name):
+        super(WcScript, self).__init__()
+        self.name = name
+
+
 def wc_parse(file_path):
     """
         Parse wc file at file_path
@@ -46,54 +159,60 @@ def wc_parse(file_path):
             file_path str: path to wc file.
 
         Returns:
-            dict: Parsed confiruation options.
+            dict: Parsed configuration options.
     """
     output = dict()
 
     with _open(file_path, 'rb') as file_handle:
-        # Trim file header
-        file_handle.seek(39)
+
+        # File title
+        title = WcStr.new_bytes(file_handle.read(31), flag_bytes=0)
 
         try:
             while True:
-                # Read 140 bytes, trim at the first zero byte
-                name = file_handle.read(132).split('\x00', 1)[0]
-
+                name = WcStr.new_bytes(file_handle.read(140))
                 # Indicates EOF
-                if name == '':
+                if str(name) == '':
                     raise StopIteration()
 
-                output[name] = list()
+                output[str(name)] = WcScript(name)
 
                 try:
                     while True:
-                        line_header = file_handle.read(8)
-                        if line_header == '':
+                        # Read: command 260, arguments 268, check file path 268
+                        call = WcStr.new_bytes(file_handle.read(260))
+                        args = WcStr.new_bytes(file_handle.read(260))
+                        check = WcStr.new_bytes(file_handle.read(260))
+                        # Discard sixteen bytes or unknown.
+                        unknown = WcStr.new_bytes(file_handle.read(16), 16)
+
+                        continuation = WcStr.new_bytes(file_handle.read_ahead(8), 8)
+
+                        output[str(name)].append(
+                            WcAction(
+                                call,
+                                args,
+                                check,
+                                unknown,
+                                (continuation if not continuation.bool_flag_at(4) else WcStr('', ''))
+                            )
+                        )
+
+                        if not continuation.bool_flag_at(4):
+                            file_handle.seek_ahead(8)
+                        else:
                             raise StopIteration()
-
-                        if line_header[0] not in BIT_FLAG:
-                            # No longer on a command/argument,
-                            # Go back before line header
-                            file_handle.seek(file_handle.tell()-8)
-                            raise StopIteration()
-
-                        enabled = BIT_FLAG[line_header[0]]
-
-                        # Read: command 260, arguments 536
-                        callm = file_handle.read(260).split('\x00', 1)[0]
-                        calla = file_handle.read(536).split('\x00', 1)[0]
-                        output[name].append(tuple((enabled, callm, calla)))
 
                 except StopIteration:
                     # No more commands for this script.
                     pass
 
-                output[name] = tuple(output[name])
 
         except StopIteration:
             # No more scripts in this .wc file
             pass
 
+    pprint(output, width=120)
     return output
 
 def main(argp=None):
@@ -103,7 +222,7 @@ def main(argp=None):
     if not argp:
         argp = ARGP.parse_args()
 
-    print(wc_parse(argp.file_path))
+    wc_parse(argp.file_path)
 
 
 if __name__ == '__main__':
