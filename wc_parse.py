@@ -12,8 +12,6 @@ import re
 import string
 import textwrap
 
-from pprint import pformat
-
 from pprint import pprint
 
 ARGP = argparse.ArgumentParser(
@@ -21,7 +19,7 @@ ARGP = argparse.ArgumentParser(
 )
 ARGP.add_argument('file_path', help="Path to .wc file.")
 
-BIT_FLAG = {
+BYTE_FLAG = {
     '\x00': False,
     '\x01': True,
 }
@@ -47,6 +45,15 @@ class _open(file):
         return bytes_read
 
     def seek_ahead(self, numbytes):
+        """
+            Seek forward without reading.
+
+            Args:
+                numbytes int: Number of bytes to skip ahead by.
+
+            Retunrs:
+                None
+        """
         self.seek(self.tell() + numbytes)
 
 class WcStr(object):
@@ -77,7 +84,19 @@ class WcStr(object):
         )
 
     def bool_flag_at(self, idx):
-        if not self.flags[idx] in BIT_FLAG:
+        """
+            Interpret a byte as a boolean
+
+            Args:
+                idx int: 0-based offset in self.flags to look at.
+
+            Returns:
+                bool: Translation from module BYTE_FLAG dict.
+
+            Raises:
+                ValueError: When byte not in BYTE_FLAG
+        """
+        if not self.flags[idx] in BYTE_FLAG:
             raise ValueError(
                 'Flag byte `{}` at {}, is not boolean.'.format(
                     binascii.hexlify(self.flags[idx]),
@@ -85,10 +104,20 @@ class WcStr(object):
                 )
             )
 
-        return BIT_FLAG[self.flags[idx]]
+        return BYTE_FLAG[self.flags[idx]]
 
     @classmethod
     def new_bytes(cls, raw_value, flag_bytes=None):
+        """
+            New from bytes, interpret first n-bytes as a flag sequence.
+
+            Args:
+                raw_value str: Sequence of bytes.
+                flag_bytes int: Number of header bytes to use as flags.
+
+            Returns:
+                WcStr
+        """
         if flag_bytes is None:
             flag_bytes = cls.FLAG_BYTES
 
@@ -102,15 +131,20 @@ class WcAction(object):
 
     @property
     def enabled(self):
-        return BIT_FLAG[self.call.flags[0]]
+        """
+            Get state of enabled flag.
 
-    def __init__(self, call, args, check, unknown, continuation):
+            Returns:
+                bool
+        """
+        return BYTE_FLAG[self.call.flags[0]]
+
+    def __init__(self, call, args, check, unknown):
         super(WcAction, self).__init__()
         self.call = call
         self.args = args
         self.check = check
         self.unknown = unknown
-        self.continuation = continuation
 
     def __str__(self):
 
@@ -119,7 +153,6 @@ class WcAction(object):
             args         {}
             check        {}
             unknown      {}
-            continuation {}
         ''').format(
             repr(self.call),
             # binascii.hexlify(call.raw)
@@ -129,8 +162,6 @@ class WcAction(object):
             # binascii.hexlify(check.raw)
             repr(self.unknown),
             # binascii.hexlify(unknown.raw)
-            repr(self.continuation)
-            # binascii.hexlify(continuation.raw)
         )
 
         return output
@@ -186,19 +217,18 @@ def wc_parse(file_path):
                         # Discard sixteen bytes or unknown.
                         unknown = WcStr.new_bytes(file_handle.read(16), 16)
 
-                        continuation = WcStr.new_bytes(file_handle.read_ahead(8), 8)
+                        end = WcStr.new_bytes(file_handle.read_ahead(8), 8)
 
                         output[str(name)].append(
                             WcAction(
                                 call,
                                 args,
                                 check,
-                                unknown,
-                                (continuation if not continuation.bool_flag_at(4) else WcStr('', ''))
+                                unknown
                             )
                         )
 
-                        if not continuation.bool_flag_at(4):
+                        if not end.bool_flag_at(4):
                             file_handle.seek_ahead(8)
                         else:
                             raise StopIteration()
@@ -212,7 +242,6 @@ def wc_parse(file_path):
             # No more scripts in this .wc file
             pass
 
-    pprint(output, width=120)
     return output
 
 def main(argp=None):
@@ -222,7 +251,10 @@ def main(argp=None):
     if not argp:
         argp = ARGP.parse_args()
 
-    wc_parse(argp.file_path)
+    pprint(
+        wc_parse(argp.file_path),
+        width=120
+    )
 
 
 if __name__ == '__main__':
