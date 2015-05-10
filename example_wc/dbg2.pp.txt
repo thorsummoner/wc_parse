@@ -1,4 +1,5 @@
-Worldcraft Command Sequences\r\n\x1a\xcd\xccL>\x03\x00\x00\x00
+Worldcraft Command Sequences\r\n\x1a\xcd\xccL>
+\x03\x00\x00\x00
 
 Default\x00cal" 1\r\n\t"$basetexture" "Decals/decal_paintsplatterpink001"\r\n\t"$decalscale" 0.25\r\n\t"$translucent" 1\r\n\t"$model" 1\r\n}\r\n\r\n\r\x01\x00\x00\x00
 
@@ -42,8 +43,9 @@ Config Name 2 012345678901234567890123456789012345678901234567890123456789012345
     \x01\x00\x00\x00\x00\x00\x00\x00
 
 
-#  39 File Header
+#  34 File Header
 #   1 File Terminator \x00
+#   4 Config Count (Integer)
 # 128     Config Name
 #   4     Config Flags
 #   8         Command Flags
@@ -55,3 +57,9 @@ Config Name 2 012345678901234567890123456789012345678901234567890123456789012345
 # 259         Post String
 #   1         Post Terminator \x00
 #   8         Process Window Flags
+
+# Python struct       Class
+#
+# 35sI                WcFile
+# 128sI               WcCommands (`I` indicates number of WcCommands)
+# 8?260s260s8?260s8?  WcCommand
