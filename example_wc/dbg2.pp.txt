@@ -60,6 +60,6 @@ Config Name 2 012345678901234567890123456789012345678901234567890123456789012345
 
 # Python struct       Class
 #
-# 35sI                WcFile
-# 128sI               WcCommands (`I` indicates number of WcCommands)
-# 8?260s260s8?260s8?  WcCommand
+# 35sI                   WcFile
+# 128sI                  WcCommands (`I` indicates number of WcCommands)
+# ?7x260s260s?7x260s?7x  WcCommand
