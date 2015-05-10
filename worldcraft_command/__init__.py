@@ -10,9 +10,12 @@ TODO Encoding::
 
     >>> import worldcraft_command
 
-TODO Decoding::
+Decoding::
 
     >>> import worldcraft_command
+    >>> from pprint import pprint
+    >>> file_handle = open('stock_wc/CmdSeq.wc', 'r')
+    >>> _, configs = worldcraft_command.load(file_handle)
 
 """
 __version__ = '1.0.0-beta'

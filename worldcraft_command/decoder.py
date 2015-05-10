@@ -1,5 +1,9 @@
 #!/usr/bin/env python2
 
+"""
+    Decode wc files into keyed columnar sets of ordered config information
+"""
+
 import re
 import string
 import struct
@@ -13,7 +17,7 @@ except ImportError:
 
 
 class WorldcraftCommandDecoder(object):
-    """docstring for WorldcraftCommandDecoder"""
+    """WorldcraftCommandDecoder"""
 
     WC_FILE = OrderedDict(
         format_name='35s',
@@ -38,9 +42,40 @@ class WorldcraftCommandDecoder(object):
         super(WorldcraftCommandDecoder, self).__init__()
 
     def _ascii(self, value):
+        """
+            Split value on non-printable-ascii characters.
+
+            Args:
+                value str: WorldcraftCommand string data.
+
+            Returns:
+                str: Left most set of printable ascii characters.
+        """
         return self.NON_ASCI.split(value, 1)[0].strip()
 
     def _unpack(self, packs, file_handle):
+        """
+            Wrapper for strut.unpack
+
+            Handles only a single packed value at a time, I was unable
+            to unpack data headers in one call, values were incorrect.
+
+            Unpacked strings have non-printable ascii characters removed,
+            trailing whitespace removed.
+
+            Strings in WorldcraftCommand files are terminated by a \x00
+            byte, so garbage suffixing that byte is split/trimmed as well.
+
+            Args:
+                packs OrderedDict: Named struck.pack values.
+                file_handle file: Object to read bytes from.
+
+            Returns:
+                OrderedDict:
+                    Key: Data name.
+                    value: Cleaned data.
+
+        """
         output = OrderedDict()
         for key, pack in packs.iteritems():
             value = struct.unpack(
@@ -56,12 +91,30 @@ class WorldcraftCommandDecoder(object):
         return output
 
     def decode(self, raw):
+        """
+            Primary decode method
+
+            Args:
+                raw: A file handle to a wc file.
+
+            Returns:
+                tuple:
+                    0 str: Wc file header string. (Garbage)
+                    1 dict:
+                        key: Config Name
+                        value list:
+                            item OrderedDict:
+                                key: Command data name.
+                                value: Data from file.
+        """
         file_handle = StringIO.StringIO(raw)
         name, num_entries = self._unpack(self.WC_FILE, file_handle).values()
 
         entries = dict()
         for _ in range(num_entries):
-            config, num_commands = self._unpack(self.WC_COMMANDS, file_handle).values()
+            config, num_commands = self._unpack(
+                self.WC_COMMANDS, file_handle
+            ).values()
             entries[config] = list()
             commands = entries[config]
             for _ in range(num_commands):
