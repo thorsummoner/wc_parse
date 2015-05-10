@@ -28,8 +28,14 @@ class Window(Gtk.Window):
             )
         )
         self.builder = builder
-        self.window = builder.get_object(self.ROOT_WINDOW)
-        builder.connect_signals(self.Handler(self))
+        self.change_window()
+
+    def change_window(self, window=None):
+        if window is None:
+            window = self.ROOT_WINDOW
+
+        self.window = self.builder.get_object(window)
+        self.builder.connect_signals(self.Handler(self))
 
         self.window.show_all()
 
