@@ -24,6 +24,6 @@ pprint(hammer_conf)
 - [ ] Write wc files
 - [ ] Implement JSON module like interface
 - [ ] Unittests
-- [ ] Cleanup example WC files
-- [ ] Move TODO into README
+- [x] Cleanup example WC files
+- [x] Move TODO into README
 
