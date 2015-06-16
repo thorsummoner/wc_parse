@@ -6,7 +6,7 @@ def read(fname):
 
 setuptools.setup(
     name = 'worldcraftcommand',
-    version = '0.1.0',
+    version = '0.2.00',
     author = 'Dylan Grafmyre',
     author_email = 'thorsummoner@live.com',
     description = ('WorldCraft Command file parser/scripter'),

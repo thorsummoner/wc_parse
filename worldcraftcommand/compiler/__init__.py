@@ -2,5 +2,6 @@
 Command Line interface for compiling maps
 """
 
-print(__doc__)
-exit(1)
+def main():
+    print(__doc__)
+    exit(1)

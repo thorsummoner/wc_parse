@@ -2,5 +2,6 @@
 Map compiler interface
 """
 
-print(__doc__)
-exit(1)
+def main():
+    print(__doc__)
+    exit(1)
