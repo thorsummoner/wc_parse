@@ -30,5 +30,3 @@ def user_data(resource):
 from . import compiler
 from . import gnome
 from . import util
-
-

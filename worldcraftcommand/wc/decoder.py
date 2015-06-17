@@ -15,6 +15,17 @@ try:
 except ImportError:
     import StringIO
 
+HEADER = 'Worldcraft Command Sequences'
+
+class WcCmdSeq(dict):
+    def __init__(self, header=None):
+        super(WcCmdSeq, self).__init__()
+
+        if header is None:
+            header = HEADER
+
+        self.header = header
+
 
 class WorldcraftCommandDecoder(object):
     """WorldcraftCommandDecoder"""
@@ -100,7 +111,7 @@ class WorldcraftCommandDecoder(object):
             Returns:
                 tuple:
                     0 str: Wc file header string. (Garbage)
-                    1 dict:
+                    1 WcCmdSeq:
                         key: Config Name
                         value list:
                             item OrderedDict:
@@ -110,7 +121,7 @@ class WorldcraftCommandDecoder(object):
         file_handle = StringIO.StringIO(raw)
         name, num_entries = self._unpack(self.WC_FILE, file_handle).values()
 
-        entries = dict()
+        entries = WcCmdSeq()
         for _ in range(num_entries):
             config, num_commands = self._unpack(
                 self.WC_COMMANDS, file_handle
@@ -122,4 +133,4 @@ class WorldcraftCommandDecoder(object):
                     self._unpack(self.WC_COMMAND, file_handle)
                 )
 
-        return (name, entries)
+        return entries
