@@ -20,11 +20,16 @@ ARGP = argparse.ArgumentParser(
 ARGP.add_argument('--config', help='`.wc` File to Read.', default=DEFAULT)
 ARGP.add_argument('profile', nargs='?', help='Profile Name')
 
-def main():
+def main(argp=None):
+    if argp is None:
+        argp = ARGP.parse_args()
+
     print(__doc__)
     print(user_data('default.wc'))
     with open(DEFAULT) as file_handle:
-        pprint (wc.load(file_handle).keys())
-    exit(1)
+        profiles = wc.load(file_handle)
+
+    pprint(argp.profile)
+    pprint(profiles[argp.profile])
 
 from pprint import pprint
