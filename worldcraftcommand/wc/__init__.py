@@ -18,13 +18,10 @@ Decoding::
     >>> _, configs = worldcraft_command.load(file_handle)
 
 """
-__version__ = '1.0.0-beta'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'WorldcraftCommandDecoder', 'WorldcraftCommandEncoder',
 ]
-
-__author__ = 'Dylan Grafmyre <thorsummoner@live.com>'
 
 from .decoder import WorldcraftCommandDecoder
 from .encoder import WorldcraftCommandEncoder
