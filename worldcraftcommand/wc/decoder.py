@@ -17,14 +17,22 @@ except ImportError:
 
 HEADER = 'Worldcraft Command Sequences'
 
-class WcCmdSeq(dict):
+class WcCmdSeqs(dict):
     def __init__(self, header=None):
-        super(WcCmdSeq, self).__init__()
+        super(WcCmdSeqs, self).__init__()
 
         if header is None:
             header = HEADER
 
         self.header = header
+
+class WcCmdSeq(list):
+    def __init__(self):
+        super(WcCmdSeq, self).__init__()
+
+    def posix(self):
+        raise NotImplementedError
+
 
 
 class WorldcraftCommandDecoder(object):
@@ -111,9 +119,9 @@ class WorldcraftCommandDecoder(object):
             Returns:
                 tuple:
                     0 str: Wc file header string. (Garbage)
-                    1 WcCmdSeq:
+                    1 WcCmdSeqs:
                         key: Config Name
-                        value list:
+                        value WcCmdSeq:
                             item OrderedDict:
                                 key: Command data name.
                                 value: Data from file.
@@ -121,12 +129,12 @@ class WorldcraftCommandDecoder(object):
         file_handle = StringIO.StringIO(raw)
         name, num_entries = self._unpack(self.WC_FILE, file_handle).values()
 
-        entries = WcCmdSeq()
+        entries = WcCmdSeqs()
         for _ in range(num_entries):
             config, num_commands = self._unpack(
                 self.WC_COMMANDS, file_handle
             ).values()
-            entries[config] = list()
+            entries[config] = WcCmdSeq()
             commands = entries[config]
             for _ in range(num_commands):
                 commands.append(

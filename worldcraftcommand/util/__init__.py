@@ -29,7 +29,16 @@ def main(argp=None):
     with open(DEFAULT) as file_handle:
         profiles = wc.load(file_handle)
 
-    pprint(argp.profile)
-    pprint(profiles[argp.profile])
+    if argp.profile is None:
+        pprint(profiles.keys())
+    else:
+
+        pprint(argp.profile)
+        pprint(profiles[argp.profile])
+        pprint(type(profiles[argp.profile]))
+
+        print('-'*80)
+        print(profiles[argp.profile].posix())
+        print('-'*80)
 
 from pprint import pprint
