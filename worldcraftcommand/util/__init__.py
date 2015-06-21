@@ -32,13 +32,11 @@ def main(argp=None):
     if argp.profile is None:
         pprint(profiles.keys())
     else:
-
-        pprint(argp.profile)
-        pprint(profiles[argp.profile])
-        pprint(type(profiles[argp.profile]))
-
         print('-'*80)
-        print(profiles[argp.profile].posix())
+        print('\n'.join([
+            '{:>3}) {}'.format(ln, line)
+            for ln, line in enumerate(profiles[argp.profile].posix().splitlines(), start=1)
+        ]))
         print('-'*80)
 
 from pprint import pprint

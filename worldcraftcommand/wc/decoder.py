@@ -31,8 +31,15 @@ class WcCmdSeq(list):
         super(WcCmdSeq, self).__init__()
 
     def posix(self):
-        from pprint import pprint
-        pprint(self)
+        return '\n'.join([
+            ''.join([
+                ('' if cmd['enabled'] else '# '),
+                '{cmd[command]} {cmd[arguments]}'.format(cmd=cmd),
+                ('' if cmd['log_enabled'] else ' 2>&1 /dev/null'),
+                ('; stat {cmd[post_path]}'.format(cmd=cmd) if cmd['post_enabled'] and cmd['post_path'] else ''),
+            ])
+            for cmd in self
+        ])
 
 
 class WorldcraftCommandDecoder(object):
@@ -59,7 +66,6 @@ class WorldcraftCommandDecoder(object):
 
     def __init__(self):
         super(WorldcraftCommandDecoder, self).__init__()
-        print(self.WC_COMMAND)
 
     def _ascii(self, value):
         """
