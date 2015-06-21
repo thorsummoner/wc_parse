@@ -31,8 +31,8 @@ class WcCmdSeq(list):
         super(WcCmdSeq, self).__init__()
 
     def posix(self):
-        raise NotImplementedError
-
+        from pprint import pprint
+        pprint(self)
 
 
 class WorldcraftCommandDecoder(object):
@@ -59,6 +59,7 @@ class WorldcraftCommandDecoder(object):
 
     def __init__(self):
         super(WorldcraftCommandDecoder, self).__init__()
+        print(self.WC_COMMAND)
 
     def _ascii(self, value):
         """
