@@ -19,22 +19,22 @@ except ImportError:
 class WorldcraftCommandDecoder(object):
     """WorldcraftCommandDecoder"""
 
-    WC_FILE = OrderedDict(
-        format_name='35s',
-        num_configs='I'
-    )
-    WC_COMMANDS = OrderedDict(
-        config_name='128s',
-        num_commands='I'
-    )
-    WC_COMMAND = OrderedDict(
-        enabled='?7x',
-        command='260s',
-        arguments='260s',
-        post_enabled='?7x',
-        post_path='260s',
-        log_enabled='?7x'
-    )
+    WC_FILE = OrderedDict([
+        ('format_name', '35s'),
+        ('num_configs', 'I'),
+    ])
+    WC_COMMANDS = OrderedDict([
+        ('config_name', '128s'),
+        ('num_commands', 'I'),
+    ])
+    WC_COMMAND = OrderedDict([
+        ('enabled', '?7x'),
+        ('command', '260s'),
+        ('arguments', '260s'),
+        ('post_enabled', '?7x'),
+        ('post_path', '260s'),
+        ('log_enabled', '?7x'),
+    ])
 
     NON_ASCI = re.compile('[^{}]'.format(re.escape(string.printable)))
 
